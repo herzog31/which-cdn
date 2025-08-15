@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Which CDN? - CDN Detection Tool</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Which CDN?</h1>
+        <p class="subtitle">Detect CDN providers for any website</p>
+        
+        <div class="input-group">
+            <label for="domain">Enter a domain:</label>
+            <input type="text" id="domain" placeholder="e.g., www.adobe.com" value="www.adobe.com">
+        </div>
+        
+        <button onclick="detectCDN()" id="detectBtn">Detect CDN</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing domain...</p>
+        </div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <!-- JavaScript files -->
+    <script src="js/cdn-detector.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 

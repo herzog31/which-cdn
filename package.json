@@ -1,0 +1,16 @@
+{
+  "name": "which-cdn",
+  "version": "1.0.0",
+  "description": "A tool to detect CDN providers for websites",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["cdn", "detection", "dns", "web"],
+  "author": "Mark J. Becker",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+} 

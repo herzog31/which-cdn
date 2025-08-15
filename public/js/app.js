@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+import { CDNDetector } from './cdn-detector.js';
+
 // UI Controller for CDN Detection App
 class CDNApp {
     constructor() {
@@ -26,13 +28,15 @@ class CDNApp {
                 this.detectCDN();
             }
         });
+
+        // Add click event handler to the detect button
+        document.getElementById('detectBtn').addEventListener('click', () => {
+            this.detectCDN();
+        });
     }
 
     async detectCDN() {
         const domain = document.getElementById('domain').value.trim();
-        const detectBtn = document.getElementById('detectBtn');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
 
         if (!domain) {
             alert('Please enter a domain');
@@ -131,15 +135,7 @@ class CDNApp {
     }
 }
 
-// Global function for the onclick handler
-function detectCDN() {
-    if (!window.cdnApp) {
-        window.cdnApp = new CDNApp();
-    }
-    window.cdnApp.detectCDN();
-}
-
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.cdnApp = new CDNApp();
+    new CDNApp();
 }); 

@@ -25,28 +25,32 @@ A web-based tool to detect CDN (Content Delivery Network) providers for any webs
 
 ### Prerequisites
 
-- Node.js (version 14 or higher)
-- npm or yarn
+- Node.js (version 22 or higher)
+- npm
 
 ### Local Development
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd which-cdn
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm start
 ```
 
 4. Open your browser and navigate to:
+
 ```
 http://localhost:3000
 ```
@@ -56,6 +60,7 @@ http://localhost:3000
 The site is automatically deployed to GitHub Pages via GitHub Actions.
 
 **Automatic Deployment:**
+
 - Push to the `main` branch
 - GitHub Actions will automatically build and deploy
 - Site will be available at: `https://yourusername.github.io/which-cdn`
@@ -72,41 +77,17 @@ The site is automatically deployed to GitHub Pages via GitHub Actions.
    - Confidence level
    - Supporting evidence
 
-## How It Works
-
-The tool uses multiple detection methods:
-
-1. **DNS Resolution**: Resolves the domain to an IP address, following CNAME chains
-2. **ASN Lookup**: Queries IP geolocation APIs to get ASN information
-3. **Reverse DNS**: Performs reverse DNS lookup to analyze hostnames
-4. **CNAME Analysis**: Examines CNAME chains for CDN-specific domains
-5. **Confidence Scoring**: Combines multiple indicators for accurate detection
-
-## Architecture
-
-The application follows a modular architecture with clear separation of concerns:
-
-- **`cdn-detector.js`**: Core CDN detection logic and API interactions
-- **`app.js`**: UI controller, event handling, and result display
-- **`styles.css`**: All styling and visual components
-- **`index.html`**: Clean HTML structure with external resource references
-
-This modular approach makes the code more maintainable, testable, and easier to extend with new features.
-
 ### Deployment Architecture
 
 The project supports both local development and GitHub Pages deployment:
 
 **Local Development:**
+
 - Node.js Express server serves files from `public/` directory
 - Access via `http://localhost:3000`
 
-**GitHub Pages:**
-- Static files served directly from repository root
-- GitHub Actions automatically builds and deploys
-- Access via `https://yourusername.github.io/which-cdn`
-
 **Build Process:**
+
 - GitHub Actions copies files from `public/` to root directory
 - Excludes server files and dependencies
 - Deploys only static assets needed for the web app
@@ -134,50 +115,46 @@ which-cdn/
 └── README.md              # This file
 ```
 
-### Running in Development Mode
+### Code Quality
+
+This project uses ESLint and Prettier for code quality and consistent formatting.
+
+#### Linting
+
+**Run ESLint:**
 
 ```bash
-npm run dev
+npm run lint
 ```
 
-## Technologies Used
+**Fix ESLint issues automatically:**
 
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Backend**: Node.js, Express.js
-- **APIs**: Google DNS, ipinfo.io, DNS-over-HTTPS
-- **Architecture**: Modular JavaScript with separation of concerns
+```bash
+npm run lint:fix
+```
 
-## Limitations
+#### Formatting
 
-- Rate limits apply to external APIs (ipinfo.io: 50k/month, DNS APIs: variable)
-- Some CDNs may not be detected if they use custom configurations
-- Results depend on the accuracy of external DNS and geolocation services
+**Check formatting:**
 
-## Contributing
+```bash
+npm run format
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+**Fix formatting automatically:**
+
+```bash
+npm run format:fix
+```
+
+#### Combined Checks
+
+**Run all quality checks:**
+
+```bash
+npm test
+```
 
 ## License
 
 Apache License 2.0 - see [LICENSE](LICENSE) file for details.
-
-## Examples
-
-### Successful CDN Detection
-
-**Input**: `www.adobe.com`
-**Output**: 
-- ✅ CDN Detected: Akamai
-- Confidence: 95%
-- Evidence: ASN 20940 matches akamai, Reverse DNS contains akamaized.net, CNAME chain contains edgesuite.net
-
-### No CDN Detected
-
-**Input**: `example.com`
-**Output**: 
-- ❌ No CDN Detected
-- This domain doesn't appear to be using a known CDN provider 

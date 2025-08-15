@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-class CDNDetector {
+export class CDNDetector {
     constructor() {
         this.cdnSignatures = {
             'akamai': {

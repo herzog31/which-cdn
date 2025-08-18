@@ -135,7 +135,15 @@ class CDNApp {
     }
 }
 
+function loadAdobeRUM() {
+    const script = document.createElement('script');
+    script.src = 'https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js';
+    script.type = 'text/javascript';
+    document.head.appendChild(script);
+}
+
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new CDNApp();
+    loadAdobeRUM();
 }); 

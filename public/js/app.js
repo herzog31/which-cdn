@@ -36,10 +36,20 @@ class CDNApp {
     }
 
     async detectCDN() {
-        const domain = document.getElementById('domain').value.trim();
+        let domain = document.getElementById('domain').value.trim();
+
+        if (!domain.includes('://')) {
+            domain = 'https://' + domain;
+        }
+
+        try {
+            domain = new URL(domain).hostname;
+        } catch (error) {
+            console.debug('Could not parse domain, very likely invalid', error);
+        }
 
         if (!domain) {
-            alert('Please enter a domain');
+            alert('Please enter a valid domain');
             return;
         }
 
@@ -85,39 +95,28 @@ class CDNApp {
 
         let html = `
             <h3>Results for ${result.domain}</h3>
-            <p><strong>IP Address:</strong> ${result.ip || 'Unknown'}</p>
-            <p><strong>ASN:</strong> ${result.asn || 'Unknown'}</p>
-            <p><strong>Organization:</strong> ${result.organization || 'Unknown'}</p>
         `;
-
-        if (result.cnameChain.length > 0) {
-            html += `<p><strong>CNAME Chain:</strong></p><ul>`;
-            result.cnameChain.forEach(cname => {
-                html += `<li>${cname}</li>`;
-            });
-            html += `</ul>`;
-        }
 
         if (result.cdnDetected) {
             html += `
                 <div style="margin-top: 20px;">
-                    <h4 style="color: #28a745;">✅ CDN Detected: ${result.cdnProvider}</h4>
-                    <p><strong>Confidence:</strong> ${result.confidence}%</p>
+                    <h2 style="color: #28a745; font-size: 2.5em; margin-bottom: 20px; text-align: center;">${result.cdnProvider}</h2>
+                    <p><strong>Confidence:</strong> ${Math.round(result.confidence * 100)}%</p>
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${result.confidence}%"></div>
+                        <div class="confidence-fill" style="width: ${Math.round(result.confidence * 100)}%"></div>
                     </div>
-                    <p><strong>Evidence:</strong></p>
+                    <p style="margin-top: 30px;"><strong>Evidence:</strong></p>
                     <ul class="evidence-list">
             `;
             result.evidence.forEach(evidence => {
-                html += `<li>${evidence}</li>`;
+                html += `<li>${evidence.message}</li>`;
             });
             html += `</ul></div>`;
         } else {
             html += `
                 <div style="margin-top: 20px;">
-                    <h4 style="color: #dc3545;">❌ No CDN Detected</h4>
-                    <p>This domain doesn't appear to be using a known CDN provider.</p>
+                    <h2 style="color: #dc3545; font-size: 2.5em; margin-bottom: 20px; text-align: center;">❌ No CDN detected</h2>
+                    <p style="margin-top: 30px;">This domain doesn't appear to be using a known CDN provider.</p>
                 </div>
             `;
         }

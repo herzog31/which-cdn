@@ -94,8 +94,3 @@ Thumbs.db
 # Logs
 logs
 *.log
-
-# Build artifacts (for GitHub Pages)
-css/
-js/
-index.html

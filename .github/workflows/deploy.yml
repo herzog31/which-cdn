@@ -37,28 +37,13 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build for deployment
-        run: |
-          # Copy static files to root for GitHub Pages
-          cp -r public/css css/
-          cp -r public/js js/
-          cp public/index.html index.html
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
-          exclude: |
-            public/
-            server.js
-            package.json
-            package-lock.json
-            node_modules/
-            .git/
-            .github/
+          path: 'public'
 
   # Deployment job
   deploy:

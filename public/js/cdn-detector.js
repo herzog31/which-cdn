@@ -141,17 +141,7 @@ export class CDNDetector {
       reverseDNS: [],
     };
 
-    // Get response headers
-    try {
-      const headers = await this.getHeaders(domain);
-      data.headers = headers;
-    } catch (error) {
-      console.error('Could not get headers', error);
-    } finally {
-      this.updateProgress();
-    }
-
-    // Get IPs and CNAME chain from DNS
+    // Get IPs and CNAME chain from DNS first (needed for ASN/reverse DNS)
     try {
       const result = await this.getIPsFromDNS(domain);
       if (!result || result[0].size === 0) {
@@ -164,23 +154,35 @@ export class CDNDetector {
       console.error('Could not get IPs and CNAME from DNS', error);
     }
 
-    // Get ASN information and reverse DNS in parallel
+    // Get headers, ASN information and reverse DNS in parallel
+    const headerPromise = this.getHeaders(domain);
     const asnPromises = data.ips.map((ip) => this.getASNInfo(ip));
     const reverseDNSPromises = data.ips.map((ip) => this.getReverseDNS(ip));
 
     // Track progress for each individual request
+    const headerPromiseWithProgress = headerPromise.finally(() =>
+      this.updateProgress(),
+    );
     const asnPromisesWithProgress = asnPromises.map((promise) =>
       promise.finally(() => this.updateProgress()),
     );
-
     const reverseDNSPromisesWithProgress = reverseDNSPromises.map((promise) =>
       promise.finally(() => this.updateProgress()),
     );
 
-    const [asnResults, reverseDNSResults] = await Promise.allSettled([
-      Promise.all(asnPromisesWithProgress),
-      Promise.all(reverseDNSPromisesWithProgress),
-    ]);
+    const [headerResult, asnResults, reverseDNSResults] =
+      await Promise.allSettled([
+        headerPromiseWithProgress,
+        Promise.all(asnPromisesWithProgress),
+        Promise.all(reverseDNSPromisesWithProgress),
+      ]);
+
+    // Process header results
+    if (headerResult.status === 'fulfilled') {
+      data.headers = headerResult.value;
+    } else {
+      console.error('Could not get headers:', headerResult.reason);
+    }
 
     // Process ASN results
     if (asnResults.status === 'fulfilled') {
@@ -333,7 +335,8 @@ export class CDNDetector {
       domainsToFollow.push('www.' + domain);
     }
 
-    // Estimate total requests for progress tracking, including headers and ANS / reverse DNS
+    // Estimate total requests for progress tracking
+    // DNS requests + 1 header request + (estimated IPs * 2 for ASN and reverse DNS)
     this.totalRequests += domainsToFollow.length * 3 + 1;
 
     let requestCount = 0;

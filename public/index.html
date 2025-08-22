@@ -23,6 +23,19 @@
 
       <button id="detectBtn">Detect CDN</button>
 
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Analyzing domain...</p>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p id="progressText">0%</p>
+        </div>
+      </div>
+
+      <div class="results" id="results"></div>
+
       <div class="info-section">
         <input type="checkbox" id="infoToggle" class="info-checkbox" />
         <label for="infoToggle" class="info-toggle">
@@ -89,19 +102,6 @@
           </p>
         </div>
       </div>
-
-      <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p>Analyzing domain...</p>
-        <div class="progress-container">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-          <p id="progressText">0%</p>
-        </div>
-      </div>
-
-      <div class="results" id="results"></div>
 
       <div class="footer-links">
         <a

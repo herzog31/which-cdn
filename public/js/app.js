@@ -18,6 +18,7 @@ import { CDNDetector } from './cdn-detector.js';
 class CDNApp {
   constructor() {
     this.detector = new CDNDetector();
+    this.detector.setProgressCallback(this.updateProgress.bind(this));
     this.initializeEventListeners();
     this.loadDomainFromURL();
   }
@@ -39,7 +40,7 @@ class CDNApp {
   loadDomainFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const domainParam = urlParams.get('domain');
-    
+
     if (domainParam) {
       const domainInput = document.getElementById('domain');
       domainInput.value = domainParam;
@@ -103,7 +104,23 @@ class CDNApp {
 
     if (isLoading) {
       results.style.display = 'none';
+      this.resetProgress();
     }
+  }
+
+  resetProgress() {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    progressFill.style.width = '0%';
+    progressText.textContent = '0%';
+  }
+
+  updateProgress(progress) {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    progressFill.style.width = `${progress.percentage}%`;
+    progressText.textContent = `${progress.percentage}%`;
   }
 
   displayResults(result) {

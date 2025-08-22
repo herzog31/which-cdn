@@ -64,6 +64,39 @@ export class CDNDetector {
         servers: [],
       },
     };
+
+    // Progress tracking
+    this.progressCallback = null;
+    this.totalRequests = 0;
+    this.completedRequests = 0;
+  }
+
+  setProgressCallback(callback) {
+    this.progressCallback = callback;
+  }
+
+  updateProgress(completed = 1) {
+    this.completedRequests += completed;
+    if (this.progressCallback) {
+      const currentPercentage =
+        this.totalRequests > 0
+          ? Math.round((this.completedRequests / this.totalRequests) * 100)
+          : 0;
+      // Ensure percentage never goes down by tracking the maximum
+      this.maxPercentage = Math.max(this.maxPercentage || 0, currentPercentage);
+
+      this.progressCallback({
+        completed: this.completedRequests,
+        total: this.totalRequests,
+        percentage: this.maxPercentage,
+      });
+    }
+  }
+
+  resetProgress() {
+    this.totalRequests = 0;
+    this.completedRequests = 0;
+    this.maxPercentage = 0;
   }
 
   async fetchWithTimeout(url, options = {}) {
@@ -96,6 +129,9 @@ export class CDNDetector {
       evidence: [],
     };
 
+    // Reset progress tracking
+    this.resetProgress();
+
     // Step 1: Data collection phase
     const data = {
       headers: {},
@@ -111,6 +147,8 @@ export class CDNDetector {
       data.headers = headers;
     } catch (error) {
       console.error('Could not get headers', error);
+    } finally {
+      this.updateProgress();
     }
 
     // Get IPs and CNAME chain from DNS
@@ -127,11 +165,21 @@ export class CDNDetector {
     }
 
     // Get ASN information and reverse DNS in parallel
-    const asnPromises = data.ips.map(ip => this.getASNInfo(ip));
-    const reverseDNSPromises = data.ips.map(ip => this.getReverseDNS(ip));
+    const asnPromises = data.ips.map((ip) => this.getASNInfo(ip));
+    const reverseDNSPromises = data.ips.map((ip) => this.getReverseDNS(ip));
+
+    // Track progress for each individual request
+    const asnPromisesWithProgress = asnPromises.map((promise) =>
+      promise.finally(() => this.updateProgress()),
+    );
+
+    const reverseDNSPromisesWithProgress = reverseDNSPromises.map((promise) =>
+      promise.finally(() => this.updateProgress()),
+    );
+
     const [asnResults, reverseDNSResults] = await Promise.allSettled([
-      Promise.all(asnPromises),
-      Promise.all(reverseDNSPromises)
+      Promise.all(asnPromisesWithProgress),
+      Promise.all(reverseDNSPromisesWithProgress),
     ]);
 
     // Process ASN results
@@ -155,7 +203,10 @@ export class CDNDetector {
       }
       data.reverseDNS = Array.from(result);
     } else {
-      console.error('Could not get reverse DNS information:', reverseDNSResults.reason);
+      console.error(
+        'Could not get reverse DNS information:',
+        reverseDNSResults.reason,
+      );
     }
 
     // Step 2: Data analysis phase
@@ -282,10 +333,14 @@ export class CDNDetector {
       domainsToFollow.push('www.' + domain);
     }
 
+    // Estimate total requests for progress tracking, including headers and ANS / reverse DNS
+    this.totalRequests += domainsToFollow.length * 3 + 1;
+
     let requestCount = 0;
     while (domainsToFollow.length > 0 && requestCount < maxRequests) {
       const domainToFollow = domainsToFollow.shift();
       const [recIps, recCNameChain] = await this.doDNSLookup(domainToFollow);
+      this.updateProgress();
       requestCount++;
       cNameChain.add(domainToFollow);
       for (const ip of recIps) {
@@ -298,6 +353,10 @@ export class CDNDetector {
         }
       }
     }
+
+    // Update total requests with actual IP count for ASN and reverse DNS
+    const actualTotal = requestCount + 1 + ips.size * 2; // DNS requests + headers + ASN/reverse DNS
+    this.totalRequests = Math.max(this.totalRequests, actualTotal); // Use the higher of estimated or actual
 
     return [ips, cNameChain];
   }
@@ -378,7 +437,9 @@ export class CDNDetector {
 
   async getASNInfo(ip) {
     try {
-      const response = await this.fetchWithTimeout(`https://ipinfo.io/${ip}/json`);
+      const response = await this.fetchWithTimeout(
+        `https://ipinfo.io/${ip}/json`,
+      );
       const data = await response.json();
 
       return {

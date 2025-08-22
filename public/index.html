@@ -5,32 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Detect CDN providers for any website using DNS analysis, ASN lookup, and reverse DNS resolution. Identify Akamai, Cloudflare, Fastly, AWS CloudFront, and more."
+      content="Free CDN detection tool to identify which CDN provider a website is using. Detect Akamai, Cloudflare, Fastly, AWS CloudFront, Google Cloud CDN, Azure CDN, and more using DNS analysis, ASN lookup, and HTTP headers."
     />
-    <title>Which CDN? - CDN Detection Tool</title>
+    <title>CDN Detection Tool - Find Which CDN Provider a Website Uses</title>
     <link rel="stylesheet" href="css/styles.css" />
     <script type="module" src="js/app.js"></script>
   </head>
   <body>
     <div class="container">
-      <h1>Which CDN?</h1>
-      <p class="subtitle">Detect CDN providers for any website</p>
+      <h1>CDN Detection Tool</h1>
+      <p class="subtitle">Identify which CDN provider any website is using</p>
 
       <div class="input-group">
         <label for="domain">Enter a domain:</label>
-        <input
-          type="text"
-          id="domain"
-          placeholder="e.g., www.adobe.com"
-          value=""
-        />
+        <input type="text" id="domain" placeholder="www.adobe.com" value="" />
       </div>
 
       <button id="detectBtn">Detect CDN</button>
 
+      <div class="info-section">
+        <input type="checkbox" id="infoToggle" class="info-checkbox" />
+        <label for="infoToggle" class="info-toggle">
+          How the CDN Detection Works
+          <svg
+            class="toggle-icon"
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="currentColor"
+          >
+            <path d="M2 4l4 4 4-4" />
+          </svg>
+        </label>
+
+        <div class="info-content">
+          <p>
+            Content Delivery Networks (CDNs) are distributed server networks
+            that cache and deliver web content from locations closer to users.
+            They're commonly used to improve website performance, reduce
+            latency, handle high traffic loads, and provide DDoS protection.
+          </p>
+          <p>
+            This tool identifies CDN providers by analyzing multiple data
+            sources. Enter a domain to perform DNS analysis, ASN lookup, and
+            reverse DNS resolution to determine the CDN infrastructure.
+          </p>
+
+          <h3>Detection Methods</h3>
+          <ul>
+            <li>
+              <strong>DNS Analysis:</strong> Examines DNS records and CNAME
+              chains for CDN-specific domains
+            </li>
+            <li>
+              <strong>ASN Lookup:</strong> Analyzes Autonomous System Numbers to
+              identify CDN provider networks
+            </li>
+            <li>
+              <strong>HTTP Headers:</strong> Checks response headers for
+              CDN-specific signatures
+            </li>
+            <li>
+              <strong>Reverse DNS:</strong> Performs reverse DNS lookups to map
+              CDN infrastructure
+            </li>
+          </ul>
+
+          <h3>Currently Supported CDN Providers</h3>
+          <ul>
+            <li>Akamai</li>
+            <li>Cloudflare</li>
+            <li>Fastly</li>
+            <li>AWS CloudFront</li>
+            <li>Google Cloud CDN</li>
+            <li>Microsoft Azure CDN</li>
+            <li>Alibaba Cloud CDN</li>
+          </ul>
+          <p>
+            Confidence scores are calculated based on the strength and quantity
+            of evidence found. Each detection method contributes different
+            weights to the final score, and all evidence used in the calculation
+            is displayed in the results.
+          </p>
+        </div>
+      </div>
+
       <div class="loading" id="loading">
         <div class="spinner"></div>
         <p>Analyzing domain...</p>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p id="progressText">0%</p>
+        </div>
       </div>
 
       <div class="results" id="results"></div>
@@ -49,7 +117,6 @@
           </svg>
           View on GitHub
         </a>
-        <!-- Add more links here as needed -->
       </div>
     </div>
   </body>

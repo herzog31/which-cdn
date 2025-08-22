@@ -257,7 +257,8 @@ input[type='text']:focus {
   transform: rotate(-90deg);
 }
 
-.info-checkbox:not(:checked) ~ .info-toggle {
+.info-checkbox:not(:checked) ~ .info-toggle,
+.info-checkbox:not(:checked) ~ .info-toggle h2 {
   margin-bottom: 0;
 }
 

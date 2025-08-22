@@ -47,8 +47,8 @@ export class CDNDetector {
       },
       CloudFront: {
         asns: [16509],
-        domains: ['cloudfront.net'],
-        headers: ['X-Amz-Cf-Pop', 'X-Cache'],
+        domains: ['cloudfront.net', 'cloudfront.net.s3.amazonaws.com'],
+        headers: ['X-Amz-Cf-Pop'],
         servers: [],
       },
       Google: {
@@ -64,6 +64,27 @@ export class CDNDetector {
         servers: [],
       },
     };
+  }
+
+  async fetchWithTimeout(url, options = {}) {
+    const timeout = 5000; // 5 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeout}ms`);
+      }
+      throw error;
+    }
   }
 
   async detectCDN(domain) {
@@ -105,30 +126,36 @@ export class CDNDetector {
       console.error('Could not get IPs and CNAME from DNS', error);
     }
 
-    // Get ASN information
-    try {
-      for (const ip of data.ips) {
-        const asn = await this.getASNInfo(ip);
+    // Get ASN information and reverse DNS in parallel
+    const asnPromises = data.ips.map(ip => this.getASNInfo(ip));
+    const reverseDNSPromises = data.ips.map(ip => this.getReverseDNS(ip));
+    const [asnResults, reverseDNSResults] = await Promise.allSettled([
+      Promise.all(asnPromises),
+      Promise.all(reverseDNSPromises)
+    ]);
+
+    // Process ASN results
+    if (asnResults.status === 'fulfilled') {
+      for (const asn of asnResults.value) {
         if (asn && !data.asns.find((a) => a.asn === asn.asn)) {
           data.asns.push(asn);
         }
       }
-    } catch (error) {
-      console.error('Could not get ASN', error);
+    } else {
+      console.error('Could not get ASN information:', asnResults.reason);
     }
 
-    // Get reverse DNS
-    try {
+    // Process reverse DNS results
+    if (reverseDNSResults.status === 'fulfilled') {
       const result = new Set();
-      for (const ip of data.ips) {
-        const reverseDNS = await this.getReverseDNS(ip);
+      for (const reverseDNS of reverseDNSResults.value) {
         if (reverseDNS) {
           result.add(reverseDNS);
         }
       }
       data.reverseDNS = Array.from(result);
-    } catch (error) {
-      console.error('Could not get reverse DNS information', error);
+    } else {
+      console.error('Could not get reverse DNS information:', reverseDNSResults.reason);
     }
 
     // Step 2: Data analysis phase
@@ -225,7 +252,7 @@ export class CDNDetector {
   }
 
   async doDNSLookup(domain) {
-    const response = await fetch(
+    const response = await this.fetchWithTimeout(
       `https://dns.google/resolve?name=${domain}&type=A`,
     );
     const data = await response.json();
@@ -284,7 +311,7 @@ export class CDNDetector {
       hopCount++;
 
       try {
-        const response = await fetch(
+        const response = await this.fetchWithTimeout(
           `https://dns.google/resolve?name=${currentDomain}&type=A`,
         );
         const data = await response.json();
@@ -324,7 +351,7 @@ export class CDNDetector {
       hopCount++;
 
       try {
-        const response = await fetch(
+        const response = await this.fetchWithTimeout(
           `https://dns.google/resolve?name=${currentDomain}&type=CNAME`,
         );
         const data = await response.json();
@@ -351,7 +378,7 @@ export class CDNDetector {
 
   async getASNInfo(ip) {
     try {
-      const response = await fetch(`https://ipinfo.io/${ip}/json`);
+      const response = await this.fetchWithTimeout(`https://ipinfo.io/${ip}/json`);
       const data = await response.json();
 
       return {
@@ -369,7 +396,7 @@ export class CDNDetector {
   async getReverseDNS(ip) {
     try {
       const reversedIP = ip.split('.').reverse().join('.');
-      const response = await fetch(
+      const response = await this.fetchWithTimeout(
         `https://dns.google/resolve?name=${reversedIP}.in-addr.arpa&type=PTR`,
       );
       const data = await response.json();
@@ -382,7 +409,7 @@ export class CDNDetector {
 
   async getHeaders(domain) {
     const endpoint = `https://api.hackertarget.com/httpheaders/?q=${encodeURIComponent(domain)}`;
-    const resp = await fetch(endpoint);
+    const resp = await this.fetchWithTimeout(endpoint);
     if (!resp.ok) {
       throw new Error(`HTTP ${resp.status}`);
     }

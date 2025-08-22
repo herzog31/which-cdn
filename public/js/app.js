@@ -19,6 +19,7 @@ class CDNApp {
   constructor() {
     this.detector = new CDNDetector();
     this.initializeEventListeners();
+    this.loadDomainFromURL();
   }
 
   initializeEventListeners() {
@@ -33,6 +34,24 @@ class CDNApp {
     document.getElementById('detectBtn').addEventListener('click', () => {
       this.detectCDN();
     });
+  }
+
+  loadDomainFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const domainParam = urlParams.get('domain');
+    
+    if (domainParam) {
+      const domainInput = document.getElementById('domain');
+      domainInput.value = domainParam;
+      // Automatically detect CDN for the domain from URL
+      this.detectCDN();
+    }
+  }
+
+  updateURLWithDomain(domain) {
+    const url = new URL(window.location);
+    url.searchParams.set('domain', domain);
+    window.history.replaceState({}, '', url);
   }
 
   async detectCDN() {
@@ -52,6 +71,9 @@ class CDNApp {
       alert('Please enter a valid domain');
       return;
     }
+
+    // Update URL with the domain parameter
+    this.updateURLWithDomain(domain);
 
     // Show loading
     this.setLoadingState(true);
